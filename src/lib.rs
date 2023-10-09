@@ -1,23 +1,33 @@
-use chrono::{DateTime, Local, NaiveTime};
+use std::ops::Range;
 
-pub fn parse(text: &str, now: &DateTime<Local>) -> Option<DateTime<Local>> {
-    println!("{}", now);
+use chrono::{DateTime, Days, Local, NaiveTime};
+
+pub struct ParseResult {
+    pub date: DateTime<Local>,
+    pub range: Range<usize>,
+}
+
+pub fn parse(text: &str, now: &DateTime<Local>) -> Option<ParseResult> {
     if text == "today" || text == "tod" {
-        Some(
-            now.date_naive()
+        Some(ParseResult {
+            date: now
+                .date_naive()
                 .and_time(NaiveTime::default())
                 .and_local_timezone(Local)
                 .unwrap(),
-        )
+            range: (0..text.len()),
+        })
     } else if text == "tomorrow" || text == "tom" {
-        Some(
-            now.date_naive()
+        Some(ParseResult {
+            date: now
+                .date_naive()
                 .checked_add_days(Days::new(1))
                 .unwrap()
                 .and_time(NaiveTime::default())
                 .and_local_timezone(Local)
                 .unwrap(),
-        )
+            range: (0..text.len()),
+        })
     } else {
         None
     }
@@ -39,28 +49,42 @@ mod tests {
     fn parse_today() {
         let now = parse_date_time("2023-10-08 20:29");
         let result = parse("today", &now).unwrap();
-        assert_eq!(result.month(), 10);
-        assert_eq!(result.day(), 8);
-        assert_eq!(result.year(), 2023);
+        assert_eq!(result.date.month(), 10);
+        assert_eq!(result.date.day(), 8);
+        assert_eq!(result.date.year(), 2023);
+        assert_eq!(result.range, (0..5));
 
         let result = parse("tod", &now).unwrap();
-        assert_eq!(result.month(), 10);
-        assert_eq!(result.day(), 8);
-        assert_eq!(result.year(), 2023);
+        assert_eq!(result.date.month(), 10);
+        assert_eq!(result.date.day(), 8);
+        assert_eq!(result.date.year(), 2023);
+        assert_eq!(result.range, (0..3));
     }
 
     #[test]
     fn parse_tomorrow() {
         let now = parse_date_time("2023-10-08 20:29");
         let result = parse("tomorrow", &now).unwrap();
-        assert_eq!(result.month(), 10);
-        assert_eq!(result.day(), 9);
-        assert_eq!(result.year(), 2023);
+        assert_eq!(result.date.month(), 10);
+        assert_eq!(result.date.day(), 9);
+        assert_eq!(result.date.year(), 2023);
+        assert_eq!(result.range, (0..8));
 
         let now = parse_date_time("2023-09-30 20:29");
         let result = parse("tom", &now).unwrap();
-        assert_eq!(result.month(), 10);
-        assert_eq!(result.day(), 1);
-        assert_eq!(result.year(), 2023);
+        assert_eq!(result.date.month(), 10);
+        assert_eq!(result.date.day(), 1);
+        assert_eq!(result.date.year(), 2023);
+        assert_eq!(result.range, (0..3));
+    }
+
+    #[test]
+    fn parse_junk() {
+        let now = parse_date_time("2023-10-08 20:29");
+        let result = parse("I'm a little teapot", &now);
+        assert!(result.is_none());
+
+        let result = parse("todd tomm tday tomrow todayyy", &now);
+        assert!(result.is_none());
     }
 }
