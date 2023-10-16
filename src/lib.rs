@@ -1,12 +1,13 @@
 use std::ops::Range;
 
-use chrono::{DateTime, Days, Local, NaiveTime};
+use chrono::{Days, NaiveDateTime, NaiveTime};
 
 pub struct ParseResult<T> {
     pub data: T,
     pub range: Range<usize>,
 }
 
+// needs a name that doesn't include "Result"
 impl<T> ParseResult<T> {
     pub fn map<U, F>(self, f: F) -> ParseResult<U>
     where
@@ -19,7 +20,7 @@ impl<T> ParseResult<T> {
     }
 }
 
-pub fn parse(text: &str, now: &DateTime<Local>) -> Option<ParseResult<DateTime<Local>>> {
+pub fn parse(text: &str, now: &NaiveDateTime) -> Option<ParseResult<NaiveDateTime>> {
     parse_date(text).map(|result| result.map(|data| convert_date(data, now)))
 }
 
@@ -45,33 +46,25 @@ fn parse_date(text: &str) -> Option<ParseResult<Date>> {
     }
 }
 
-fn convert_date(date: Date, now: &DateTime<Local>) -> DateTime<Local> {
+// TODO: output should be NaiveDateTime
+fn convert_date(date: Date, now: &NaiveDateTime) -> NaiveDateTime {
     match date {
-        Date::Today => now
-            .date_naive()
-            .and_time(NaiveTime::default())
-            .and_local_timezone(Local)
-            .unwrap(),
+        Date::Today => now.date().and_time(NaiveTime::default()),
         Date::Tomorrow => now
-            .date_naive()
+            .date()
             .checked_add_days(Days::new(1))
             .unwrap()
-            .and_time(NaiveTime::default())
-            .and_local_timezone(Local)
-            .unwrap(),
+            .and_time(NaiveTime::default()),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{Datelike, Local, NaiveDateTime};
+    use chrono::{Datelike, NaiveDateTime};
 
-    fn parse_date_time(string: &str) -> DateTime<Local> {
-        NaiveDateTime::parse_from_str(string, "%Y-%m-%d %H:%M")
-            .unwrap()
-            .and_local_timezone(Local)
-            .unwrap()
+    fn parse_date_time(string: &str) -> NaiveDateTime {
+        NaiveDateTime::parse_from_str(string, "%Y-%m-%d %H:%M").expect("parsing date in test")
     }
 
     #[test]
