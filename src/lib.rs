@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::unwrap_used)]
 use std::ops::Range;
 
 use chrono::{Days, NaiveDateTime, NaiveTime};
@@ -20,8 +21,9 @@ impl<T> ParseResult<T> {
     }
 }
 
+#[must_use]
 pub fn parse(text: &str, now: &NaiveDateTime) -> Option<ParseResult<NaiveDateTime>> {
-    parse_date(text).map(|result| result.map(|data| convert_date(data, now)))
+    parse_date(text).map(|result| result.map(|data| convert_date(&data, now)))
 }
 
 // definitely needs a better name
@@ -47,7 +49,7 @@ fn parse_date(text: &str) -> Option<ParseResult<Date>> {
 }
 
 // TODO: output should be NaiveDateTime
-fn convert_date(date: Date, now: &NaiveDateTime) -> NaiveDateTime {
+fn convert_date(date: &Date, now: &NaiveDateTime) -> NaiveDateTime {
     match date {
         Date::Today => now.date().and_time(NaiveTime::default()),
         Date::Tomorrow => now
@@ -60,6 +62,8 @@ fn convert_date(date: Date, now: &NaiveDateTime) -> NaiveDateTime {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
+
     use super::*;
     use chrono::{Datelike, NaiveDateTime};
 
