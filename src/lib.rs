@@ -20,38 +20,40 @@ impl<T> ParseResult<T> {
     }
 }
 
-#[must_use]
-pub fn parse(text: &str, today: NaiveDate) -> Option<ParseResult<NaiveDate>> {
-    parse_date(text).map(|result| result.map(|data| convert_date(&data, today)))
-}
-
-enum FlexibleDate {
+#[derive(Debug, PartialEq, Eq)]
+pub enum FlexibleDate {
     Today,
     Tomorrow,
 }
 
-fn parse_date(text: &str) -> Option<ParseResult<FlexibleDate>> {
-    if text == "today" || text == "tod" {
-        Some(ParseResult {
-            data: FlexibleDate::Today,
-            range: (0..text.len()),
-        })
-    } else if text == "tomorrow" || text == "tom" {
-        Some(ParseResult {
-            data: FlexibleDate::Tomorrow,
-            range: (0..text.len()),
-        })
-    } else {
-        None
+impl FlexibleDate {
+    #[must_use]
+    pub fn parse_from_str(text: &str) -> Option<ParseResult<FlexibleDate>> {
+        if text == "today" || text == "tod" {
+            Some(ParseResult {
+                data: FlexibleDate::Today,
+                range: (0..text.len()),
+            })
+        } else if text == "tomorrow" || text == "tom" {
+            Some(ParseResult {
+                data: FlexibleDate::Tomorrow,
+                range: (0..text.len()),
+            })
+        } else {
+            None
+        }
     }
-}
 
-fn convert_date(date: &FlexibleDate, today: NaiveDate) -> NaiveDate {
-    match date {
-        FlexibleDate::Today => today,
-        FlexibleDate::Tomorrow => today
-            .checked_add_days(Days::new(1))
-            .expect("error while adding days to date"),
+    /// # Panics
+    /// If something rare goes wrong while incrementing the date
+    #[must_use]
+    pub fn into_naive_date(self, today: NaiveDate) -> NaiveDate {
+        match self {
+            FlexibleDate::Today => today,
+            FlexibleDate::Tomorrow => today
+                .checked_add_days(Days::new(1))
+                .expect("error while adding days to date"),
+        }
     }
 }
 
@@ -68,44 +70,50 @@ mod tests {
 
     #[test]
     fn parse_today() {
-        let now = parse_date("2023-10-08");
-        let result = parse("today", now).unwrap();
-        assert_eq!(result.data.month(), 10);
-        assert_eq!(result.data.day(), 8);
-        assert_eq!(result.data.year(), 2023);
+        let result = FlexibleDate::parse_from_str("today").unwrap();
+        assert_eq!(result.data, FlexibleDate::Today);
         assert_eq!(result.range, (0..5));
 
-        let result = parse("tod", now).unwrap();
-        assert_eq!(result.data.month(), 10);
-        assert_eq!(result.data.day(), 8);
-        assert_eq!(result.data.year(), 2023);
+        let result = FlexibleDate::parse_from_str("tod").unwrap();
+        assert_eq!(result.data, FlexibleDate::Today);
         assert_eq!(result.range, (0..3));
     }
 
     #[test]
     fn parse_tomorrow() {
-        let now = parse_date("2023-10-08");
-        let result = parse("tomorrow", now).unwrap();
-        assert_eq!(result.data.month(), 10);
-        assert_eq!(result.data.day(), 9);
-        assert_eq!(result.data.year(), 2023);
+        let result = FlexibleDate::parse_from_str("tomorrow").unwrap();
+        assert_eq!(result.data, FlexibleDate::Tomorrow);
         assert_eq!(result.range, (0..8));
 
-        let now = parse_date("2023-09-30");
-        let result = parse("tom", now).unwrap();
-        assert_eq!(result.data.month(), 10);
-        assert_eq!(result.data.day(), 1);
-        assert_eq!(result.data.year(), 2023);
+        let result = FlexibleDate::parse_from_str("tom").unwrap();
+        assert_eq!(result.data, FlexibleDate::Tomorrow);
         assert_eq!(result.range, (0..3));
     }
 
     #[test]
     fn parse_junk() {
-        let now = parse_date("2023-10-08");
-        let result = parse("I'm a little teapot", now);
+        let result = FlexibleDate::parse_from_str("I'm a little teapot");
         assert!(result.is_none());
 
-        let result = parse("todd tomm tday tomrow todayyy", now);
+        let result = FlexibleDate::parse_from_str("todd tomm tday tomrow todayyy");
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn today_into_date() {
+        let today = parse_date("2023-10-08");
+        let date = FlexibleDate::Today.into_naive_date(today);
+        assert_eq!(date.month(), 10);
+        assert_eq!(date.day(), 8);
+        assert_eq!(date.year(), 2023);
+    }
+
+    #[test]
+    fn tomorrow_into_date() {
+        let today = parse_date("2023-10-08");
+        let date = FlexibleDate::Tomorrow.into_naive_date(today);
+        assert_eq!(date.month(), 10);
+        assert_eq!(date.day(), 9);
+        assert_eq!(date.year(), 2023);
     }
 }
