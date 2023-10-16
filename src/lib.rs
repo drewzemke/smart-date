@@ -1,24 +1,8 @@
 #![warn(clippy::all, clippy::pedantic, clippy::unwrap_used)]
 use chrono::{Days, NaiveDate};
-use std::ops::Range;
+use parsed::Parsed;
 
-pub struct ParseResult<T> {
-    pub data: T,
-    pub range: Range<usize>,
-}
-
-// needs a name that doesn't include "Result"
-impl<T> ParseResult<T> {
-    pub fn map<U, F>(self, f: F) -> ParseResult<U>
-    where
-        F: FnOnce(T) -> U,
-    {
-        ParseResult {
-            data: f(self.data),
-            range: self.range,
-        }
-    }
-}
+mod parsed;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum FlexibleDate {
@@ -28,14 +12,14 @@ pub enum FlexibleDate {
 
 impl FlexibleDate {
     #[must_use]
-    pub fn parse_from_str(text: &str) -> Option<ParseResult<FlexibleDate>> {
+    pub fn parse_from_str(text: &str) -> Option<Parsed<FlexibleDate>> {
         if text == "today" || text == "tod" {
-            Some(ParseResult {
+            Some(Parsed {
                 data: FlexibleDate::Today,
                 range: (0..text.len()),
             })
         } else if text == "tomorrow" || text == "tom" {
-            Some(ParseResult {
+            Some(Parsed {
                 data: FlexibleDate::Tomorrow,
                 range: (0..text.len()),
             })
