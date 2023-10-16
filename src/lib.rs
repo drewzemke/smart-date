@@ -1,7 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::unwrap_used)]
+use chrono::{Days, NaiveDate};
 use std::ops::Range;
-
-use chrono::{Days, NaiveDateTime, NaiveTime};
 
 pub struct ParseResult<T> {
     pub data: T,
@@ -22,25 +21,24 @@ impl<T> ParseResult<T> {
 }
 
 #[must_use]
-pub fn parse(text: &str, now: &NaiveDateTime) -> Option<ParseResult<NaiveDateTime>> {
-    parse_date(text).map(|result| result.map(|data| convert_date(&data, now)))
+pub fn parse(text: &str, today: NaiveDate) -> Option<ParseResult<NaiveDate>> {
+    parse_date(text).map(|result| result.map(|data| convert_date(&data, today)))
 }
 
-// definitely needs a better name
-enum Date {
+enum FlexibleDate {
     Today,
     Tomorrow,
 }
 
-fn parse_date(text: &str) -> Option<ParseResult<Date>> {
+fn parse_date(text: &str) -> Option<ParseResult<FlexibleDate>> {
     if text == "today" || text == "tod" {
         Some(ParseResult {
-            data: Date::Today,
+            data: FlexibleDate::Today,
             range: (0..text.len()),
         })
     } else if text == "tomorrow" || text == "tom" {
         Some(ParseResult {
-            data: Date::Tomorrow,
+            data: FlexibleDate::Tomorrow,
             range: (0..text.len()),
         })
     } else {
@@ -48,15 +46,12 @@ fn parse_date(text: &str) -> Option<ParseResult<Date>> {
     }
 }
 
-// TODO: output should be NaiveDateTime
-fn convert_date(date: &Date, now: &NaiveDateTime) -> NaiveDateTime {
+fn convert_date(date: &FlexibleDate, today: NaiveDate) -> NaiveDate {
     match date {
-        Date::Today => now.date().and_time(NaiveTime::default()),
-        Date::Tomorrow => now
-            .date()
+        FlexibleDate::Today => today,
+        FlexibleDate::Tomorrow => today
             .checked_add_days(Days::new(1))
-            .unwrap()
-            .and_time(NaiveTime::default()),
+            .expect("error while adding days to date"),
     }
 }
 
@@ -65,22 +60,22 @@ mod tests {
     #![allow(clippy::unwrap_used)]
 
     use super::*;
-    use chrono::{Datelike, NaiveDateTime};
+    use chrono::{Datelike, NaiveDate};
 
-    fn parse_date_time(string: &str) -> NaiveDateTime {
-        NaiveDateTime::parse_from_str(string, "%Y-%m-%d %H:%M").expect("parsing date in test")
+    fn parse_date(string: &str) -> NaiveDate {
+        NaiveDate::parse_from_str(string, "%Y-%m-%d").expect("parsing date in test")
     }
 
     #[test]
     fn parse_today() {
-        let now = parse_date_time("2023-10-08 20:29");
-        let result = parse("today", &now).unwrap();
+        let now = parse_date("2023-10-08");
+        let result = parse("today", now).unwrap();
         assert_eq!(result.data.month(), 10);
         assert_eq!(result.data.day(), 8);
         assert_eq!(result.data.year(), 2023);
         assert_eq!(result.range, (0..5));
 
-        let result = parse("tod", &now).unwrap();
+        let result = parse("tod", now).unwrap();
         assert_eq!(result.data.month(), 10);
         assert_eq!(result.data.day(), 8);
         assert_eq!(result.data.year(), 2023);
@@ -89,15 +84,15 @@ mod tests {
 
     #[test]
     fn parse_tomorrow() {
-        let now = parse_date_time("2023-10-08 20:29");
-        let result = parse("tomorrow", &now).unwrap();
+        let now = parse_date("2023-10-08");
+        let result = parse("tomorrow", now).unwrap();
         assert_eq!(result.data.month(), 10);
         assert_eq!(result.data.day(), 9);
         assert_eq!(result.data.year(), 2023);
         assert_eq!(result.range, (0..8));
 
-        let now = parse_date_time("2023-09-30 20:29");
-        let result = parse("tom", &now).unwrap();
+        let now = parse_date("2023-09-30");
+        let result = parse("tom", now).unwrap();
         assert_eq!(result.data.month(), 10);
         assert_eq!(result.data.day(), 1);
         assert_eq!(result.data.year(), 2023);
@@ -106,11 +101,11 @@ mod tests {
 
     #[test]
     fn parse_junk() {
-        let now = parse_date_time("2023-10-08 20:29");
-        let result = parse("I'm a little teapot", &now);
+        let now = parse_date("2023-10-08");
+        let result = parse("I'm a little teapot", now);
         assert!(result.is_none());
 
-        let result = parse("todd tomm tday tomrow todayyy", &now);
+        let result = parse("todd tomm tday tomrow todayyy", now);
         assert!(result.is_none());
     }
 }
