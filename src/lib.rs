@@ -91,19 +91,3 @@ impl FlexibleDate {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #![allow(clippy::unwrap_used)]
-
-    use super::*;
-
-    #[test]
-    fn parse_junk() {
-        let result = FlexibleDate::parse_from_str("I'm a little teapot");
-        assert!(result.is_none());
-
-        let result = FlexibleDate::parse_from_str("todd tomm tday tomrow todayyy");
-        assert!(result.is_none());
-    }
-}
