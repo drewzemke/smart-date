@@ -17,18 +17,6 @@ pub struct Parsed<T> {
     pub range: Range<usize>,
 }
 
-impl<T> Parsed<T> {
-    pub fn map<U, F>(self, f: F) -> Parsed<U>
-    where
-        F: FnOnce(T) -> U,
-    {
-        Parsed {
-            data: f(self.data),
-            range: self.range,
-        }
-    }
-}
-
 /// Represents a relative (or, eventually, absolute) date.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FlexibleDate {
@@ -55,13 +43,7 @@ impl FlexibleDate {
     /// ```
     #[must_use]
     pub fn parse_from_str(text: &str) -> Option<Parsed<FlexibleDate>> {
-        match parse_flex_date(text) {
-            Ok((_, date)) => Some(Parsed {
-                data: date,
-                range: (0..text.len()),
-            }),
-            Err(_) => None,
-        }
+        parse_flex_date(text)
     }
 
     /// Converts the `FlexibleDate` into a [`NaiveDate`].

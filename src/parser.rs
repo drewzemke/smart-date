@@ -1,9 +1,10 @@
-use crate::FlexibleDate;
+use crate::{FlexibleDate, Parsed};
 use nom::{
     branch,
     bytes::complete::{is_not, tag},
     character::complete::space1,
     combinator::value,
+    sequence::tuple,
     IResult,
 };
 
@@ -38,14 +39,21 @@ fn parse_flex_date_exact(input: &str) -> IResult<&str, FlexibleDate> {
     }
 }
 
-pub(crate) fn parse_flex_date(input: &str) -> IResult<&str, FlexibleDate> {
+pub(crate) fn parse_flex_date(input: &str) -> Option<Parsed<FlexibleDate>> {
     let mut input = input;
+    let mut offset = 0;
     while parse_flex_date_exact(input).is_err() && !input.is_empty() {
         // eat a token
-        (input, _) = not_whitespace(input)?;
-        (input, _) = space1(input)?;
+        let (remainder, (token, space)) = tuple((not_whitespace, space1))(input).ok()?;
+        input = remainder;
+        offset += token.len() + space.len();
     }
     parse_flex_date_exact(input)
+        .ok()
+        .map(|(remainder, date)| Parsed {
+            data: date,
+            range: offset..(offset + input.len() - remainder.len()),
+        })
 }
 
 #[cfg(test)]
@@ -83,26 +91,30 @@ mod tests {
 
     #[test]
     fn test_parse_flex_date_substring() {
-        let (_, result) = parse_flex_date("tomorrow after").unwrap();
-        assert_eq!(result, FlexibleDate::Tomorrow);
+        let Parsed { data, range } = parse_flex_date("tomorrow after").unwrap();
+        assert_eq!(data, FlexibleDate::Tomorrow);
+        assert_eq!(range, (0..8));
 
-        let (_, result) = parse_flex_date("before tomorrow").unwrap();
-        assert_eq!(result, FlexibleDate::Tomorrow);
+        let Parsed { data, range } = parse_flex_date("before tomorrow").unwrap();
+        assert_eq!(data, FlexibleDate::Tomorrow);
+        assert_eq!(range, (7..15));
 
-        let (_, result) = parse_flex_date("before tomorrow after").unwrap();
-        assert_eq!(result, FlexibleDate::Tomorrow);
+        let Parsed { data, range } = parse_flex_date("before tomorrow after").unwrap();
+        assert_eq!(data, FlexibleDate::Tomorrow);
+        assert_eq!(range, (7..15));
 
-        let (_, result) = parse_flex_date("do a barrel roll tod").unwrap();
-        assert_eq!(result, FlexibleDate::Today);
+        let Parsed { data, range } = parse_flex_date("do a barrel roll tod").unwrap();
+        assert_eq!(data, FlexibleDate::Today);
+        assert_eq!(range, (17..20));
     }
 
     #[test]
     fn test_parse_junk() {
         let result = parse_flex_date("I'm a little teapot");
-        assert!(result.is_err());
+        assert!(result.is_none());
 
         // Make sure we only recognize dates that appear as full tokens
         let result = parse_flex_date("todd tomm ttoday dtomorrow todayyy");
-        assert!(result.is_err());
+        assert!(result.is_none());
     }
 }
