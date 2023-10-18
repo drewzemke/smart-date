@@ -4,8 +4,9 @@ use nom::{
     bytes::complete::{is_not, tag},
     character::complete::space1,
     combinator::value,
+    error::{Error, ErrorKind},
     sequence::tuple,
-    IResult,
+    Err, IResult,
 };
 
 fn not_whitespace(input: &str) -> IResult<&str, &str> {
@@ -23,26 +24,33 @@ fn parse_tomorrow(input: &str) -> IResult<&str, FlexibleDate> {
     )(input)
 }
 
+/// Try to parse a string into a `FlexibleDate` starting at the beginning of the string
 fn parse_flex_date_exact(input: &str) -> IResult<&str, FlexibleDate> {
-    let (remainder, date) = branch::alt((parse_today, parse_tomorrow))(input)?;
+    branch::alt((parse_today, parse_tomorrow))(input)
+}
+
+/// Try to parse a string into a `FlexibleDate` starting at the beginning of the string.
+/// Only succeeds if it can parse the date as a complete collection of tokens.
+fn parse_flex_date_with_suffix(input: &str) -> IResult<&str, FlexibleDate> {
+    let (remainder, date) = parse_flex_date_exact(input)?;
 
     // make sure that the next character in the output (if there is one) is a space
-    // TODO: refactor plz
-    if remainder.is_empty() {
+    if remainder.is_empty() || remainder.chars().next().is_some_and(char::is_whitespace) {
         Ok((remainder, date))
     } else {
-        let res = space1(remainder);
-        match res {
-            Ok(_) => Ok((remainder, date)),
-            Err(e) => Err(e),
-        }
+        // gross
+        Err(Err::Error(Error {
+            input,
+            code: ErrorKind::Char,
+        }))
     }
 }
 
+// TODO: docs
 pub(crate) fn parse_flex_date(input: &str) -> Option<Parsed<FlexibleDate>> {
     let mut input = input;
     let mut offset = 0;
-    while parse_flex_date_exact(input).is_err() && !input.is_empty() {
+    while parse_flex_date_with_suffix(input).is_err() && !input.is_empty() {
         // eat a token
         let (remainder, (token, space)) = tuple((not_whitespace, space1))(input).ok()?;
         input = remainder;
