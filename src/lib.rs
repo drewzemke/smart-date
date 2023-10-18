@@ -64,8 +64,7 @@ impl FlexibleDate {
         }
     }
 
-    /// # Panics
-    /// If something rare goes wrong while incrementing the date.
+    /// Converts the `FlexibleDate` into a [`NaiveDate`].
     ///
     /// ```rust
     /// # use smart_date::FlexibleDate;
@@ -88,9 +87,7 @@ impl FlexibleDate {
     pub fn into_naive_date(self, today: NaiveDate) -> NaiveDate {
         match self {
             FlexibleDate::Today => today,
-            FlexibleDate::Tomorrow => today
-                .checked_add_days(Days::new(1))
-                .expect("error while adding days to date"),
+            FlexibleDate::Tomorrow => today + Days::new(1),
         }
     }
 }
