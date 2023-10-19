@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::unwrap_used)]
 use chrono::{Days, NaiveDate};
-use parser::parse_flex_date;
+use parser::{parse_flex_date, parse_flex_date_exact};
 use std::ops::Range;
 
 mod parser;
@@ -25,24 +25,46 @@ pub enum FlexibleDate {
 }
 
 impl FlexibleDate {
-    /// Parses a `FlexibleDate` from a string. The returned `Parsed<>` type contains
+    /// Parses a `FlexibleDate` from within a string. Fails (returns `None`) if the full string does
+    /// not match a date.
+    ///
+    ///
+    /// ```rust
+    /// # use smart_date::FlexibleDate;
+    /// # fn main() {
+    /// let result1 = FlexibleDate::parse_from_str("today").unwrap();
+    /// assert_eq!(result1, FlexibleDate::Today);
+    ///
+    /// let result2 = FlexibleDate::parse_from_str("tom").unwrap();
+    /// assert_eq!(result2, FlexibleDate::Tomorrow);
+    ///
+    /// let result3 = FlexibleDate::parse_from_str("go to the store today");
+    /// assert_eq!(result3, None);
+    ///  # }
+    /// ```
+    #[must_use]
+    pub fn parse_from_str(text: &str) -> Option<FlexibleDate> {
+        parse_flex_date_exact(text).ok().map(|(_, date)| date)
+    }
+
+    /// Finds and parses a `FlexibleDate` from within a string. The returned `Parsed<>` type contains
     /// the date that was parsed as well as the location of the matching substring in the input.
     ///
     ///
     /// ```rust
     /// # use smart_date::FlexibleDate;
     /// # fn main() {
-    /// let result1 = FlexibleDate::parse_from_str("go to the store today").unwrap();
+    /// let result1 = FlexibleDate::find_and_parse_in_str("go to the store today").unwrap();
     /// assert_eq!(result1.data, FlexibleDate::Today);
     /// assert_eq!(result1.range, (16..21));
     ///
-    /// let result2 = FlexibleDate::parse_from_str("do a barrel tom okay?").unwrap();
+    /// let result2 = FlexibleDate::find_and_parse_in_str("do a barrel tom okay?").unwrap();
     /// assert_eq!(result2.data, FlexibleDate::Tomorrow);
     /// assert_eq!(result2.range, (12..15));
     ///  # }
     /// ```
     #[must_use]
-    pub fn parse_from_str(text: &str) -> Option<Parsed<FlexibleDate>> {
+    pub fn find_and_parse_in_str(text: &str) -> Option<Parsed<FlexibleDate>> {
         parse_flex_date(text)
     }
 

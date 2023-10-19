@@ -25,7 +25,7 @@ fn parse_tomorrow(input: &str) -> IResult<&str, FlexibleDate> {
 }
 
 /// Try to parse a string into a `FlexibleDate` starting at the beginning of the string
-fn parse_flex_date_exact(input: &str) -> IResult<&str, FlexibleDate> {
+pub(crate) fn parse_flex_date_exact(input: &str) -> IResult<&str, FlexibleDate> {
     branch::alt((parse_today, parse_tomorrow))(input)
 }
 
