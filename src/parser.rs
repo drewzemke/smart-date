@@ -107,9 +107,11 @@ mod tests {
         assert_eq!(data, FlexibleDate::Tomorrow);
         assert_eq!(range, (7..15));
 
-        let Parsed { data, range } = parse_flex_date("before tomorrow after").unwrap();
+        let input = "before tomorrow after";
+        let Parsed { data, range } = parse_flex_date(input).unwrap();
         assert_eq!(data, FlexibleDate::Tomorrow);
         assert_eq!(range, (7..15));
+        assert_eq!(&input[range], "tomorrow");
 
         let Parsed { data, range } = parse_flex_date("do a barrel roll tod").unwrap();
         assert_eq!(data, FlexibleDate::Today);
