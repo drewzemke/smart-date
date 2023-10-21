@@ -20,7 +20,7 @@ fn parse_today(input: &str) -> IResult<&str, FlexibleDate> {
 fn parse_tomorrow(input: &str) -> IResult<&str, FlexibleDate> {
     value(
         FlexibleDate::Tomorrow,
-        branch::alt((tag("tomorrow"), tag("tom"))),
+        branch::alt((tag("tomorrow"), tag("tom"), tag("tmrw"))),
     )(input)
 }
 
@@ -87,6 +87,9 @@ mod tests {
         assert_eq!(result, FlexibleDate::Tomorrow);
 
         let (_, result) = parse_tomorrow("tom").unwrap();
+        assert_eq!(result, FlexibleDate::Tomorrow);
+
+        let (_, result) = parse_tomorrow("tmrw").unwrap();
         assert_eq!(result, FlexibleDate::Tomorrow);
     }
 
