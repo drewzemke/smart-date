@@ -18,6 +18,29 @@ pub struct Parsed<T> {
 }
 
 /// Represents a relative (or, eventually, absolute) date.
+///
+/// # Examples
+/// Here are of input strings that will eventually be supported.
+/// See [the Todoist docs](https://todoist.com/help/articles/introduction-to-due-dates-and-due-times-q7VobO).
+/// - [x] "today", "tod"
+/// - [x] "tomorrow", "tom", "tmrw"
+/// - [ ] "wednesday", "wed" (any weekday)
+/// - [ ] "next week"
+/// - [ ] "this weekend"
+/// - [ ] "next weekend"
+/// - [ ] "in 3 days", "in three days"
+/// - [ ] "in 2 weeks", "in two weeks"
+/// - [ ] "2 weeks from now"
+/// - [ ] "in four months"
+/// - [ ] "in one year"
+/// - [ ] "next month"
+/// - [ ] "january 27", "jan 27", "01/27"
+/// - [ ] "jan 27 2024", "01/27/2024"
+/// - [ ] "27th"
+/// - [ ] "mid january"
+/// - [ ] "mid jan"
+/// - [ ] "later this week"
+/// - [ ] "two weeks from tomorrow"
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FlexibleDate {
     Today,
