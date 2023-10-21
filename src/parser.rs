@@ -25,6 +25,8 @@ fn parse_tomorrow(input: &str) -> IResult<&str, FlexibleDate> {
 }
 
 /// Try to parse a string into a `FlexibleDate` starting at the beginning of the string
+///
+/// NOTE: This expects `input` to have be converted to lower case
 pub(crate) fn parse_flex_date_exact(input: &str) -> IResult<&str, FlexibleDate> {
     branch::alt((parse_today, parse_tomorrow))(input)
 }
@@ -48,7 +50,7 @@ fn parse_flex_date_with_suffix(input: &str) -> IResult<&str, FlexibleDate> {
 
 // TODO: docs
 pub(crate) fn parse_flex_date(input: &str) -> Option<Parsed<FlexibleDate>> {
-    let mut input = input;
+    let mut input = &input.to_lowercase()[..];
     let mut offset = 0;
     while parse_flex_date_with_suffix(input).is_err() && !input.is_empty() {
         // eat a token
@@ -116,6 +118,15 @@ mod tests {
         let Parsed { data, range } = parse_flex_date("do a barrel roll tod").unwrap();
         assert_eq!(data, FlexibleDate::Today);
         assert_eq!(range, (17..20));
+    }
+
+    #[test]
+    fn text_parse_variations() {
+        let Parsed { data, .. } = parse_flex_date("Today").unwrap();
+        assert_eq!(data, FlexibleDate::Today);
+
+        let Parsed { data, .. } = parse_flex_date("toMorRoW").unwrap();
+        assert_eq!(data, FlexibleDate::Tomorrow);
     }
 
     #[test]
