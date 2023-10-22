@@ -24,11 +24,44 @@ fn parse_tomorrow(input: &str) -> IResult<&str, FlexibleDate> {
     )(input)
 }
 
+fn parse_weekday(input: &str) -> IResult<&str, FlexibleDate> {
+    branch::alt((
+        value(
+            FlexibleDate::Weekday(crate::Weekday::Sunday),
+            branch::alt((tag("sunday"), tag("sun"))),
+        ),
+        value(
+            FlexibleDate::Weekday(crate::Weekday::Monday),
+            branch::alt((tag("monday"), tag("mon"))),
+        ),
+        value(
+            FlexibleDate::Weekday(crate::Weekday::Tuesday),
+            branch::alt((tag("tuesday"), tag("tue"))),
+        ),
+        value(
+            FlexibleDate::Weekday(crate::Weekday::Wednesday),
+            branch::alt((tag("wednesday"), tag("wed"))),
+        ),
+        value(
+            FlexibleDate::Weekday(crate::Weekday::Thursday),
+            branch::alt((tag("thursday"), tag("thurs"))),
+        ),
+        value(
+            FlexibleDate::Weekday(crate::Weekday::Friday),
+            branch::alt((tag("friday"), tag("fri"))),
+        ),
+        value(
+            FlexibleDate::Weekday(crate::Weekday::Saturday),
+            branch::alt((tag("saturday"), tag("sat"))),
+        ),
+    ))(input)
+}
+
 /// Try to parse a string into a `FlexibleDate` starting at the beginning of the string
 ///
 /// NOTE: This expects `input` to have be converted to lower case
 pub(crate) fn parse_flex_date_exact(input: &str) -> IResult<&str, FlexibleDate> {
-    branch::alt((parse_today, parse_tomorrow))(input)
+    branch::alt((parse_today, parse_tomorrow, parse_weekday))(input)
 }
 
 /// Try to parse a string into a `FlexibleDate` starting at the beginning of the string.
@@ -70,6 +103,8 @@ pub(crate) fn parse_flex_date(input: &str) -> Option<Parsed<FlexibleDate>> {
 mod tests {
     #![allow(clippy::unwrap_used)]
 
+    use crate::Weekday;
+
     use super::*;
 
     #[test]
@@ -91,6 +126,15 @@ mod tests {
 
         let (_, result) = parse_tomorrow("tmrw").unwrap();
         assert_eq!(result, FlexibleDate::Tomorrow);
+    }
+
+    #[test]
+    fn test_parse_weekday() {
+        let (_, result) = parse_weekday("sunday").unwrap();
+        assert_eq!(result, FlexibleDate::Weekday(crate::Weekday::Sunday));
+
+        let (_, result) = parse_weekday("sat").unwrap();
+        assert_eq!(result, FlexibleDate::Weekday(crate::Weekday::Saturday));
     }
 
     #[test]
@@ -121,6 +165,10 @@ mod tests {
         let Parsed { data, range } = parse_flex_date("do a barrel roll tod").unwrap();
         assert_eq!(data, FlexibleDate::Today);
         assert_eq!(range, (17..20));
+
+        let Parsed { data, range } = parse_flex_date("go home fri okay").unwrap();
+        assert_eq!(data, FlexibleDate::Weekday(Weekday::Friday));
+        assert_eq!(range, (8..11));
     }
 
     #[test]
