@@ -90,11 +90,7 @@ impl Weekday {
     pub fn days_until(&self, day: &Self) -> u64 {
         let day_index = day.week_index();
         let self_index = self.week_index();
-        if day_index >= self_index {
-            day_index - self_index
-        } else {
-            7 + day_index - self_index
-        }
+        (7 + day_index - self_index) % 7
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{FlexibleDate, Parsed};
+use crate::{FlexibleDate, Parsed, Weekday};
 use nom::{
     branch,
     bytes::complete::{is_not, tag},
@@ -27,31 +27,31 @@ fn parse_tomorrow(input: &str) -> IResult<&str, FlexibleDate> {
 fn parse_weekday(input: &str) -> IResult<&str, FlexibleDate> {
     branch::alt((
         value(
-            FlexibleDate::Weekday(crate::Weekday::Sunday),
+            FlexibleDate::Weekday(Weekday::Sunday),
             branch::alt((tag("sunday"), tag("sun"))),
         ),
         value(
-            FlexibleDate::Weekday(crate::Weekday::Monday),
+            FlexibleDate::Weekday(Weekday::Monday),
             branch::alt((tag("monday"), tag("mon"))),
         ),
         value(
-            FlexibleDate::Weekday(crate::Weekday::Tuesday),
+            FlexibleDate::Weekday(Weekday::Tuesday),
             branch::alt((tag("tuesday"), tag("tue"))),
         ),
         value(
-            FlexibleDate::Weekday(crate::Weekday::Wednesday),
+            FlexibleDate::Weekday(Weekday::Wednesday),
             branch::alt((tag("wednesday"), tag("wed"))),
         ),
         value(
-            FlexibleDate::Weekday(crate::Weekday::Thursday),
+            FlexibleDate::Weekday(Weekday::Thursday),
             branch::alt((tag("thursday"), tag("thurs"))),
         ),
         value(
-            FlexibleDate::Weekday(crate::Weekday::Friday),
+            FlexibleDate::Weekday(Weekday::Friday),
             branch::alt((tag("friday"), tag("fri"))),
         ),
         value(
-            FlexibleDate::Weekday(crate::Weekday::Saturday),
+            FlexibleDate::Weekday(Weekday::Saturday),
             branch::alt((tag("saturday"), tag("sat"))),
         ),
     ))(input)
