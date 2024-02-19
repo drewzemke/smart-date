@@ -1,7 +1,12 @@
 [package]
 name = "smart-date"
+authors = ["Drew Zemke"]
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Parses relative and absolute dates in natural language text."
+repository = "https://github.com/drewzemke/todoist-tui"
+readme = "README.md"
 
 
 [dependencies]
